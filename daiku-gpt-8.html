@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DAIKU-GPT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d1117;--card:#161b22;--card2:#1c2128;
+  --border:#30363d;--border2:#444c56;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#f0a030;--accent2:#e07010;--accentglow:rgba(240,160,48,.18);
+  --green:#2ea043;--greenglow:rgba(46,160,67,.18);
+  --blue:#388bfd;--blueglow:rgba(56,139,253,.18);
+  --red:#f85149;
+  --r:14px;--r2:20px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'BIZ UDPGothic','Hiragino Kaku Gothic ProN',sans-serif;font-size:15px;overscroll-behavior:none;}
+
+/* ===== LOGIN ===== */
+#login-screen{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(ellipse at 50% 0%,#1a2a0a 0%,#0d1117 60%);
+  z-index:9999;
+}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo .mark{font-size:52px;display:block;margin-bottom:8px;filter:drop-shadow(0 0 20px #f0a030);}
+.login-logo h1{font-size:28px;font-weight:700;letter-spacing:4px;color:var(--accent);}
+.login-logo p{font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:2px;}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px 22px;width:min(400px,100%);box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.lf{margin-bottom:14px;}
+.lf label{display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
+.lf input{width:100%;background:#0d1117;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--text);outline:none;font-family:inherit;transition:.15s;}
+.lf input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentglow);}
+.login-tabs{display:flex;gap:4px;background:#0d1117;border-radius:10px;padding:4px;margin-bottom:18px;}
+.login-tab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text3);transition:.15s;}
+.login-tab.active{background:var(--accent);color:#0d1117;}
+.login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0d1117;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 16px var(--accentglow);}
+.login-btn:active{opacity:.85;}
+.login-err{font-size:12px;color:var(--red);text-align:center;min-height:16px;margin-top:8px;}
+.login-divider{text-align:center;color:var(--text3);font-size:11px;margin:12px 0;position:relative;}
+.login-divider::before,.login-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border);}
+.login-divider::before{left:0;}
+.login-divider::after{right:0;}
+.key-input-wrap{position:relative;}
+.key-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px;}
+
+/* ===== APP SHELL ===== */
+#app{display:none;height:100dvh;flex-direction:column;}
+#app.show{display:flex;}
+
+/* ===== HEADER ===== */
+.app-header{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+  flex-shrink:0;position:relative;
+}
+.app-header-logo{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:2px;flex:1;}
+.app-header-logo span{font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;margin-left:6px;}
+.hbtn{background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.hbtn:active{background:var(--border);}
+
+/* ===== MODE BAR ===== */
+.mode-bar{
+  display:flex;gap:4px;padding:8px 12px 6px;
+  background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;
+  scrollbar-width:none;
+}
+.mode-bar::-webkit-scrollbar{display:none;}
+.mode-btn{
+  display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;
+  border:1.5px solid var(--border);font-size:12px;font-weight:700;
+  color:var(--text2);background:transparent;cursor:pointer;white-space:nowrap;transition:.15s;
+}
+.mode-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accentglow);}
+.mode-btn.active.green{border-color:var(--green);color:var(--green);background:var(--greenglow);}
+.mode-btn.active.blue{border-color:var(--blue);color:var(--blue);background:var(--blueglow);}
+.mode-btn:active{opacity:.75;}
+
+/* ===== URL BAR ===== */
+.url-bar{display:none;padding:6px 12px;background:#0d1420;border-bottom:1px solid var(--border);align-items:center;gap:6px;flex-shrink:0;}
+.url-bar.show{display:flex;}
+.url-inp{flex:1;background:#0d1117;border:1.5px solid var(--border2);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text);outline:none;font-family:inherit;}
+.url-inp:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blueglow);}
+.url-clear{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;}
+
+/* ===== QUICK BTNS ===== */
+.quick-wrap{padding:8px 10px 4px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--card);}
+.qbtn{font-size:11px;font-weight:700;padding:5px 11px;border:1px solid var(--border2);border-radius:16px;background:var(--card2);color:var(--text2);cursor:pointer;white-space:nowrap;transition:.15s;}
+.qbtn:active{background:var(--accent);color:#0d1117;border-color:var(--accent);}
+
+/* ===== MESSAGES ===== */
+.msgs{flex:1;overflow-y:auto;padding:14px 10px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain;}
+.msg{display:flex;gap:8px;animation:popIn .2s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.msg.user{flex-direction:row-reverse;}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:var(--card2);border:1.5px solid var(--border);}
+.msg.user .avatar{background:var(--accentglow);border-color:var(--accent);}
+.bubble{
+  max-width:85%;padding:11px 14px;border-radius:var(--r);font-size:14px;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;
+}
+.msg.bot .bubble{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px var(--r) var(--r) var(--r);}
+.msg.user .bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0d1117;border-radius:var(--r) 4px var(--r) var(--r);font-weight:500;}
+.bubble img.att{max-width:200px;border-radius:10px;border:1px solid var(--border);margin-top:8px;display:block;}
+/* ソース */
+.src-box{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);}
+.src-box a{color:var(--blue);text-decoration:none;}
+/* タイピング */
+.typing-dots{display:flex;gap:5px;padding:4px 2px;align-items:center;}
+.typing-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dot .9s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.25s;}
+.typing-dots span:nth-child(3){animation-delay:.5s;}
+@keyframes dot{0%,80%,100%{transform:scale(.4);opacity:.25}40%{transform:scale(1.1);opacity:1}}
+/* 計算チップ */
+.calc-chip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#0d2010;border:1.5px solid var(--green);border-radius:10px;
+  padding:8px 14px;margin-top:8px;cursor:pointer;
+}
+.calc-chip:active{background:#152a18;}
+.chip-val{font-size:20px;font-weight:700;color:var(--green);font-family:monospace;}
+.chip-lbl{font-size:10px;color:#6a9a74;font-weight:700;letter-spacing:1px;}
+/* 画像バー */
+.img-bar{display:none;padding:8px 12px;background:#0d1420;border-top:1px solid var(--border);align-items:center;gap:8px;flex-shrink:0;}
+.img-bar.show{display:flex;}
+.img-thumb{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border2);}
+.img-lbl{flex:1;font-size:11px;color:var(--text2);font-weight:700;}
+.img-rm{background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;}
+
+/* ===== INPUT BAR ===== */
+.inp-bar{
+  background:var(--card);border-top:1px solid var(--border);
+  padding:8px 10px 12px;flex-shrink:0;
+}
+.inp-tools{display:flex;gap:6px;margin-bottom:7px;}
+.tool-btn{
+  background:var(--card2);border:1.5px solid var(--border);
+  color:var(--text2);border-radius:10px;
+  width:40px;height:40px;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;
+}
+.tool-btn:active{background:var(--border2);}
+.tool-btn.on{background:var(--accentglow);border-color:var(--accent);color:var(--accent);}
+.tool-btn.rec{background:rgba(248,81,73,.15);border-color:var(--red);color:var(--red);animation:recglow .8s infinite alternate;}
+@keyframes recglow{from{box-shadow:0 0 0 0 rgba(248,81,73,.4)}to{box-shadow:0 0 0 7px rgba(248,81,73,0)}}
+.inp-row{display:flex;gap:6px;align-items:flex-end;}
+.inp-ta{
+  flex:1;background:#0d1117;border:1.5px solid var(--border);
+  border-radius:12px;padding:10px 13px;font-size:14px;
+  resize:none;outline:none;line-height:1.55;
+  max-height:110px;min-height:44px;
+  font-family:inherit;color:var(--text);transition:.15s;
+}
+.inp-ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentglow);}
+.inp-ta::placeholder{color:var(--text3);}
+.send-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#0d1117;border:none;border-radius:12px;
+  width:48px;height:48px;font-size:22px;cursor:pointer;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px var(--accentglow);transition:.15s;font-weight:700;
+}
+.send-btn:active{transform:scale(.93);opacity:.85;}
+.send-btn:disabled{background:var(--card2);color:var(--text3);box-shadow:none;}
+
+/* ===== SKETCH MODAL ===== */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:8000;align-items:flex-end;justify-content:center;
+}
+.modal-overlay.show{display:flex;}
+.sketch-sheet{
+  background:var(--card);border-radius:var(--r2) var(--r2) 0 0;
+  border:1px solid var(--border);width:100%;max-height:90dvh;padding:16px 14px 24px;
+}
+.sheet-title{font-size:15px;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.sheet-close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;}
+.sk-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.sk-btn{
+  padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:12px;font-weight:700;cursor:pointer;
+  background:var(--card2);color:var(--text2);transition:.15s;
+}
+.sk-btn.on{background:var(--accent);color:#0d1117;border-color:var(--accent);}
+.sk-btn:active{opacity:.8;}
+.sk-canvas-wrap{border:2px solid var(--border2);border-radius:12px;overflow:hidden;background:#fff;touch-action:none;}
+#sketch-canvas{display:block;cursor:crosshair;}
+.sk-footer{display:flex;gap:8px;margin-top:12px;}
+.sk-submit{flex:1;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0d1117;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
+.sk-save{padding:13px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;color:var(--text2);}
+
+/* ===== HISTORY MODAL ===== */
+.history-sheet{background:var(--card);border-radius:var(--r2) var(--r2) 0 0;border:1px solid var(--border);width:100%;max-height:85dvh;padding:16px 14px 24px;overflow-y:auto;}
+.hist-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.15s;}
+.hist-item:active{border-color:var(--accent);}
+.hist-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-meta{font-size:11px;color:var(--text3);}
+.hist-del{background:rgba(248,81,73,.15);border:1px solid var(--red);color:var(--red);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;float:right;margin-top:-2px;}
+
+/* ===== SAVE MODAL ===== */
+.save-sheet{background:var(--card);border-radius:var(--r2) var(--r2) 0 0;border:1px solid var(--border);width:100%;padding:16px 14px 30px;}
+.save-btn{display:flex;align-items:center;gap:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:.15s;width:100%;}
+.save-btn:active{border-color:var(--accent);}
+.save-btn-ico{font-size:24px;flex-shrink:0;}
+.save-btn-txt{text-align:left;}
+.save-btn-txt .t{font-size:14px;font-weight:700;color:var(--text);}
+.save-btn-txt .s{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* ===== SYSTEM NOTICE ===== */
+.sys-notice{text-align:center;font-size:11px;color:var(--text3);padding:4px 0;}
+
+/* ===== SCROLLBAR ===== */
+.msgs::-webkit-scrollbar{width:4px;}
+.msgs::-webkit-scrollbar-track{background:transparent;}
+.msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, orderBy, query, serverTimestamp, limit }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const cfg={
+  apiKey:"AIzaSyCVk2miG5TK1ffTofXLh0hHgeSbOvmIgZ8",
+  authDomain:"kensetsu-nippo-842a2.firebaseapp.com",
+  projectId:"kensetsu-nippo-842a2",
+  storageBucket:"kensetsu-nippo-842a2.firebasestorage.app",
+  messagingSenderId:"702880974315",
+  appId:"1:702880974315:web:985321dc9180046629c5ae"
+};
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
+window.__fb={auth,db,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged,
+  collection,doc,setDoc,getDoc,getDocs,addDoc,deleteDoc,orderBy,query,serverTimestamp,limit};
+window.dispatchEvent(new Event('fbReady'));
+</script>
+<script>function fb(){return window.__fb;}</script>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-logo">
+    <span class="mark">⚡</span>
+    <h1>DAIKU-GPT</h1>
+    <p>POWERED BY GEMINI 2.5 FLASH</p>
+  </div>
+  <div class="login-card">
+    <div class="login-tabs">
+      <div class="login-tab active" id="tab-email" onclick="switchTab('email')">メール</div>
+      <div class="login-tab" id="tab-key" onclick="switchTab('key')">アクセスキー</div>
+    </div>
+    <!-- メールログイン -->
+    <div id="login-email-form">
+      <div class="lf"><label>メールアドレス</label><input type="email" id="l-email" placeholder="example@company.com" autocomplete="email"></div>
+      <div class="lf"><label>パスワード</label><input type="password" id="l-pass" placeholder="パスワード" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    </div>
+    <!-- アクセスキー -->
+    <div id="login-key-form" style="display:none;">
+      <div class="lf">
+        <label>アクセスキー</label>
+        <div class="key-input-wrap">
+          <input type="password" id="l-key" placeholder="HH-2026-..." autocomplete="off" onkeydown="if(event.key==='Enter')doKeyLogin()">
+          <button class="key-eye" onclick="toggleKeyEye()">👁</button>
+        </div>
+      </div>
+    </div>
+    <div class="login-err" id="l-err"></div>
+    <button class="login-btn" id="l-btn" onclick="handleLogin()">⚡ 入室する</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <!-- ヘッダー -->
+  <div class="app-header">
+    <div style="flex:1;min-width:0;">
+      <div class="app-header-logo">⚡ DAIKU-GPT <span id="user-badge"></span></div>
+      <div id="site-badge" style="display:none;font-size:10px;color:var(--accent);font-weight:700;margin-top:2px;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    </div>
+    <button class="hbtn" onclick="openHistory()" title="履歴">🗂</button>
+    <button class="hbtn" onclick="openSave()" title="保存">💾</button>
+    <button class="hbtn" onclick="newChat()">＋ 新規</button>
+    <button class="hbtn" onclick="doLogout()">ログアウト</button>
+  </div>
+
+  <!-- モードバー -->
+  <div class="mode-bar" id="mode-bar">
+    <button class="mode-btn active" id="m-normal" onclick="setMode('normal')">💬 通常</button>
+    <button class="mode-btn" id="m-search" onclick="setMode('search')">🔍 検索</button>
+    <button class="mode-btn" id="m-url" onclick="setMode('url')">🔗 URL解析</button>
+    <button class="mode-btn" id="m-sketch" onclick="openSketch()">📐 図面作成</button>
+    <button class="mode-btn" id="m-pdf" onclick="triggerPDF()">📄 PDF</button>
+  </div>
+
+  <!-- URLバー -->
+  <div class="url-bar" id="url-bar">
+    <span style="font-size:14px;flex-shrink:0;">🔗</span>
+    <input class="url-inp" id="url-inp" type="url" placeholder="https://... URLを貼り付け">
+    <button class="url-clear" onclick="clearUrl()">✕</button>
+  </div>
+
+  <!-- クイックボタン -->
+  <div class="quick-wrap" id="quick-wrap">
+    <button class="qbtn" onclick="quickSend(this)">建設業補助金2025</button>
+    <button class="qbtn" onclick="quickSend(this)">インボイス注意点</button>
+    <button class="qbtn" onclick="quickSend(this)">木材価格動向</button>
+    <button class="qbtn" onclick="quickSend(this)">職人の労務費相場</button>
+    <button class="qbtn" onclick="quickSend(this)">見積書の書き方</button>
+    <button class="qbtn" onclick="quickSend(this)">4.5寸勾配の斜辺係数</button>
+    <button class="qbtn" onclick="quickSend(this)">準防火住宅の外壁仕様</button>
+    <button class="qbtn" onclick="quickSend(this)">階段の建築基準法</button>
+  </div>
+
+  <!-- メッセージ -->
+  <div class="msgs" id="msgs">
+    <div class="sys-notice">── 新しい会話を開始しました ──</div>
+    <div class="msg bot">
+      <div class="avatar">⚡</div>
+      <div class="bubble">こんにちは！<strong>DAIKU-GPT</strong> です。<br><br>🔍 <strong>検索モード</strong> — 最新情報をリアルタイムで検索<br>🔗 <strong>URL解析</strong> — サイト・PDF・行政ページを要約<br>📷 <strong>カメラ・画像</strong> — 現場写真・図面を解析<br>🎤 <strong>音声入力</strong> — 話しかけるだけ<br>📄 <strong>PDF読み込み</strong> — PDF内容を解析<br>📐 <strong>図面作成</strong> — 手書きスケッチをAIに送信<br><br>何でも聞いてください！</div>
+    </div>
+  </div>
+
+  <!-- 画像バー -->
+  <div class="img-bar" id="img-bar">
+    <img class="img-thumb" id="img-thumb" src="" alt="">
+    <div class="img-lbl" id="img-lbl">📎 ファイルを添付しました</div>
+    <button class="img-rm" onclick="clearAttach()">✕</button>
+  </div>
+
+  <!-- 入力バー -->
+  <div class="inp-bar">
+    <div class="inp-tools">
+      <button class="tool-btn" id="mic-btn" onclick="toggleVoice()" title="音声入力">🎤</button>
+      <button class="tool-btn" onclick="triggerCamera()" title="カメラ撮影">📷</button>
+      <button class="tool-btn" onclick="triggerImage()" title="画像選択">🖼</button>
+      <button class="tool-btn" onclick="triggerPDF()" title="PDF">📄</button>
+      <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="onFileSelected(event,'image')">
+      <input type="file" id="img-input" accept="image/*" style="display:none" onchange="onFileSelected(event,'image')">
+      <input type="file" id="pdf-input" accept="application/pdf" style="display:none" onchange="onFileSelected(event,'pdf')">
+      <div style="flex:1"></div>
+      <div style="font-size:10px;color:var(--text3);display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+        <span id="mode-indicator" style="color:var(--accent);font-weight:700;">💬 通常</span>
+        <span id="voice-status" style="color:var(--red);display:none;">🔴 録音中</span>
+      </div>
+    </div>
+    <div class="inp-row">
+      <textarea class="inp-ta" id="main-ta" placeholder="何でも質問してください..." rows="1"
+        oninput="resizeTa(this)" onkeydown="onTaKey(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="doSend()">⚡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== メモリーボックス ===== -->
+<div style="position:fixed;bottom:0;left:0;right:0;z-index:200;max-width:600px;margin:0 auto;">
+  <div style="background:#1e1e1e;border-top:1px solid #333;padding:6px 12px 0;">
+    <button onclick="toggleLogicPanel()" style="width:100%;padding:9px;border-radius:9px;border:none;background:linear-gradient(135deg,#2a4a1e,#1e3a14);color:#8bc34a;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;">
+      📐 メモリーボックス（計算ロジック）<span id="logic-count" style="background:#8bc34a;color:#1e1e1e;padding:1px 8px;border-radius:10px;font-size:10px;">0件</span>
+    </button>
+    <div id="logic-panel" style="display:none;background:#1a1a1a;border-radius:12px;border:1px solid #2a4a1e;padding:14px;margin-top:8px;margin-bottom:6px;max-height:60vh;overflow-y:auto;">
+      <div style="font-size:11px;color:#8bc34a;margin-bottom:10px;line-height:1.6;">
+        職人独自の計算ロジックを教えてください。AIが次回から自動で使います。<br>
+        ロジックが十分集まったら「ロジック抽出」でコードを生成できます。
+      </div>
+      <div id="logic-list" style="margin-bottom:12px;"></div>
+      <!-- ロジック入力フォーム -->
+      <div style="background:#242424;border-radius:10px;padding:12px;border:1px solid #2a4a1e;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:800;color:#8bc34a;margin-bottom:8px;">＋ ロジックを教える</div>
+        <input id="logic-title" type="text" maxlength="50" placeholder="タイトル例：破風の斜辺計算・廻り階段段板寸法"
+          style="width:100%;padding:9px;border-radius:8px;border:1px solid #333;font-size:12px;font-family:inherit;background:#1a1a1a;color:#e0e0e0;box-sizing:border-box;margin-bottom:8px;">
+        <textarea id="logic-body" rows="3" maxlength="500" placeholder="ロジック例：破風の長さ = 軒の出 × √2（1.414）&#10;階段蹴上げ = 床高 ÷ 段数&#10;計算式・条件・注意点を詳しく"
+          style="width:100%;padding:9px;border-radius:8px;border:1px solid #333;font-size:12px;font-family:inherit;background:#1a1a1a;color:#e0e0e0;resize:none;box-sizing:border-box;margin-bottom:8px;"></textarea>
+        <input id="logic-example" type="text" maxlength="100" placeholder="計算例（任意）例：軒の出600mm → 破風848mm"
+          style="width:100%;padding:9px;border-radius:8px;border:1px solid #333;font-size:12px;font-family:inherit;background:#1a1a1a;color:#e0e0e0;box-sizing:border-box;margin-bottom:8px;">
+        <button onclick="submitLogic()" style="width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#4a7a2e,#2a5a1e);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">📐 AIに覚えさせる</button>
+      </div>
+      <!-- ロジック抽出 -->
+      <button onclick="extractLogicToCode()" style="width:100%;padding:10px;border-radius:9px;border:1px solid #8bc34a;background:transparent;color:#8bc34a;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:8px;">🔧 ロジック抽出 → コード生成</button>
+      <div id="logic-extract-result" style="display:none;background:#0d1a0d;border-radius:8px;padding:12px;font-size:11px;color:#8bc34a;white-space:pre-wrap;line-height:1.7;max-height:200px;overflow-y:auto;border:1px solid #2a4a1e;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SKETCH MODAL ===== -->
+<div class="modal-overlay" id="sketch-modal">
+  <div class="sketch-sheet">
+    <div class="sheet-title">
+      📐 簡易図面
+      <button class="sheet-close" onclick="closeModal('sketch-modal')">✕</button>
+    </div>
+    <div class="sk-toolbar">
+      <button class="sk-btn on" id="sk-pen" onclick="setSkTool('pen')">✏️ ペン</button>
+      <button class="sk-btn" id="sk-line" onclick="setSkTool('line')">📏 直線</button>
+      <button class="sk-btn" id="sk-rect" onclick="setSkTool('rect')">⬜ 四角</button>
+      <button class="sk-btn" id="sk-text" onclick="setSkTool('text')">T 文字</button>
+      <button class="sk-btn" id="sk-erase" onclick="setSkTool('erase')">🧹 消す</button>
+      <select id="sk-color-sel" onchange="skColor=this.value" style="padding:7px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;background:var(--card2);color:var(--text);">
+        <option value="#1a1a1a">黒</option>
+        <option value="#c02020">赤</option>
+        <option value="#1a50c0">青</option>
+        <option value="#1a7040">緑</option>
+        <option value="#8a4010">茶</option>
+      </select>
+      <select id="sk-size-sel" onchange="skSize=parseInt(this.value)" style="padding:7px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;background:var(--card2);color:var(--text);">
+        <option value="2">細</option>
+        <option value="4" selected>中</option>
+        <option value="8">太</option>
+      </select>
+      <button class="sk-btn" onclick="skUndo()" style="border-color:#f85149;color:#f85149;">↩ 戻す</button>
+      <button class="sk-btn" onclick="skClear()" style="border-color:#f85149;color:#f85149;">🗑 全消</button>
+    </div>
+    <div class="sk-canvas-wrap">
+      <canvas id="sketch-canvas" width="360" height="260"></canvas>
+    </div>
+    <div class="sk-footer">
+      <button class="sk-submit" onclick="sendSketch()">⚡ この図面でAIに質問</button>
+      <button class="sk-save" onclick="saveSketch()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HISTORY MODAL ===== -->
+<div class="modal-overlay" id="history-modal">
+  <div class="history-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:var(--accent);">🗂 会話履歴</div>
+      <button class="sheet-close" onclick="closeModal('history-modal')">✕</button>
+    </div>
+    <div id="history-list"><div class="sys-notice">読み込み中...</div></div>
+  </div>
+</div>
+
+<!-- ===== SAVE MODAL ===== -->
+<div class="modal-overlay" id="save-modal">
+  <div class="save-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:var(--accent);">💾 保存・共有</div>
+      <button class="sheet-close" onclick="closeModal('save-modal')">✕</button>
+    </div>
+    <button class="save-btn" onclick="saveAsText()">
+      <span class="save-btn-ico">📝</span>
+      <div class="save-btn-txt"><div class="t">テキスト保存 (.txt)</div><div class="s">会話内容をテキストファイルでダウンロード</div></div>
+    </button>
+    <button class="save-btn" onclick="saveAsHTML()">
+      <span class="save-btn-ico">🌐</span>
+      <div class="save-btn-txt"><div class="t">HTML保存 (.html)</div><div class="s">チャット画面をそのまま保存</div></div>
+    </button>
+    <button class="save-btn" onclick="copyAll()">
+      <span class="save-btn-ico">📋</span>
+      <div class="save-btn-txt"><div class="t">クリップボードにコピー</div><div class="s">会話全文をコピー</div></div>
+    </button>
+    <button class="save-btn" onclick="cloudSave()">
+      <span class="save-btn-ico">☁️</span>
+      <div class="save-btn-txt"><div class="t">クラウド保存</div><div class="s">Firestoreに保存して後で読み込める</div></div>
+    </button>
+  </div>
+</div>
+
+<script>
+// ================================================
+//  CONFIG
+// ================================================
+var FUNCTIONS_BASE = (location.hostname==='localhost'||location.hostname==='127.0.0.1')
+  ? 'http://localhost:5001/kensetsu-nippo-842a2/us-central1'
+  : 'https://us-central1-kensetsu-nippo-842a2.cloudfunctions.net';
+
+var ACCESS_KEY = 'HeartsHouse2026Key';
+
+// ═══════════════════════════════════════════════════
+//  メモリーボックス（計算ロジック記憶システム）
+//  Firestore: users/{uid}/calc_logic/{id}
+//  { title, logic, example, createdAt }
+//  → AI呼び出し時にシステムプロンプト最優先で注入
+//  → 「ロジック抽出」でAIが整理してコード生成
+// ═══════════════════════════════════════════════════
+var _logicCache = [];
+var _logicLoaded = false;
+
+async function loadCalcLogic(){
+  if(!state.uid) return;
+  try{
+    var snap=await getDocs(query(collection(db,'users',state.uid,'calc_logic'),orderBy('createdAt','asc')));
+    _logicCache=[];
+    snap.forEach(function(d){ _logicCache.push({id:d.id,...d.data()}); });
+    _logicLoaded=true;
+    renderLogicList();
+  }catch(e){ console.warn('logic load error',e); }
+}
+
+async function saveCalcLogic(title, logic, example){
+  if(!state.uid){ alert('ログインが必要です'); return; }
+  try{
+    var ref=await addDoc(collection(db,'users',state.uid,'calc_logic'),{
+      title:title.trim(), logic:logic.trim(), example:(example||'').trim(),
+      createdAt:serverTimestamp()
+    });
+    _logicCache.push({id:ref.id, title:title.trim(), logic:logic.trim(), example:(example||'').trim()});
+    renderLogicList();
+    showToast('✅ ロジックを保存しました：'+title);
+  }catch(e){ showToast('保存失敗: '+e.message); }
+}
+
+async function deleteCalcLogic(id){
+  if(!confirm('このロジックを削除しますか？')) return;
+  try{
+    await deleteDoc(doc(db,'users',state.uid,'calc_logic',id));
+    _logicCache=_logicCache.filter(function(x){return x.id!==id;});
+    renderLogicList();
+    showToast('削除しました');
+  }catch(e){ showToast('削除失敗: '+e.message); }
+}
+
+function renderLogicList(){
+  var el=document.getElementById('logic-list');
+  var badge=document.getElementById('logic-count');
+  if(badge) badge.textContent=_logicCache.length+'件';
+  if(!el) return;
+  if(!_logicCache.length){
+    el.innerHTML='<div style="color:#aaa;font-size:11px;text-align:center;padding:12px;">まだロジックが登録されていません</div>';
+    return;
+  }
+  el.innerHTML=_logicCache.map(function(k){
+    return '<div style="background:#fff;border-radius:9px;border:1px solid #d0c090;padding:10px 12px;margin-bottom:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<span style="font-size:12px;font-weight:800;color:#3a2800;">📐 '+esc(k.title)+'</span>'
+      +'<button onclick="deleteCalcLogic(\''+k.id+'\')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:2px 7px;color:#ef4444;font-size:10px;cursor:pointer;">削除</button>'
+      +'</div>'
+      +'<div style="font-size:11px;color:#6b4c1e;white-space:pre-wrap;line-height:1.6;">'+esc(k.logic)+'</div>'
+      +(k.example?'<div style="font-size:10px;color:#999;margin-top:3px;">例: '+esc(k.example)+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+// 保存済みロジックをシステムプロンプトに最優先で注入
+function buildLogicContext(){
+  if(!_logicCache.length) return '';
+  return '\n\n【⚡最優先カスタムロジック — 以下は職人が直接教えた計算ルールです。標準的な計算より必ずこちらを優先して使用してください】\n'
+    +_logicCache.map(function(k,i){
+      return '[ロジック'+(i+1)+'] '+k.title+'：'+k.logic+(k.example?' （例：'+k.example+'）':'');
+    }).join('\n');
+}
+
+// ロジック抽出：保存済みロジックをAIが整理してJavaScriptコードを生成
+async function extractLogicToCode(){
+  if(!_logicCache.length){ showToast('ロジックが登録されていません'); return; }
+  var extractEl=document.getElementById('logic-extract-result');
+  extractEl.style.display='block';
+  extractEl.textContent='🤖 ロジックを整理中...';
+  var prompt='以下は大工・建築現場職人が教えてくれた計算ロジックです。\n'
+    +'これらをまとめて、実際に動作するJavaScript関数群として整理・実装してください。\n'
+    +'各ロジックはfunction名を付け、引数と戻り値を明確にしてください。\n'
+    +'最後に、これらの関数をDAIKU-GPTのシステムプロンプトに追加する際の推奨テキストも生成してください。\n\n'
+    +'【保存済みロジック一覧】\n'
+    +_logicCache.map(function(k,i){
+      return '['+(i+1)+'] タイトル：'+k.title+'\nロジック：'+k.logic+(k.example?'\n例：'+k.example:'');
+    }).join('\n\n');
+  try{
+    var resp=await callGemini(prompt,false,'',null);
+    extractEl.textContent=resp;
+    showToast('✅ ロジック抽出完了！');
+  }catch(e){
+    extractEl.textContent='エラー: '+e.message;
+  }
+}
+
+function submitLogic(){
+  var title=document.getElementById('logic-title').value.trim();
+  var logic=document.getElementById('logic-body').value.trim();
+  var example=document.getElementById('logic-example').value.trim();
+  if(!title||!logic){ showToast('タイトルとロジックを入力してください'); return; }
+  saveCalcLogic(title,logic,example);
+  document.getElementById('logic-title').value='';
+  document.getElementById('logic-body').value='';
+  document.getElementById('logic-example').value='';
+}
+
+function toggleLogicPanel(){
+  var p=document.getElementById('logic-panel');
+  var isOpen=p.style.display!=='none';
+  p.style.display=isOpen?'none':'block';
+  if(!isOpen && !_logicLoaded) loadCalcLogic();
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg){ var t=document.getElementById('toast'); if(t){t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);} }
+
+var AI_SYS = [
+'あなたはDAIKU-GPT。日本の建築大工・工務店の現場で活躍するプロの職人の右腕となる専門AIである。職人の指示を即座に理解し、現場で即使える正確な数値・手順を返すことに全力を尽くせ。',
+'',
+'【最重要ルール：まず数値・答えを出せ】',
+'- 質問に数値が絡む場合、最初の行に答えの数値のみを出す。説明はその後に簡潔に行う。',
+'- 職人特有の言葉遣いや現場のニュアンスを深く理解し、文脈から意図を正確に読み取ること。曖昧な表現でも現場の常識で解釈し、常に最善の回答を試みること。',
+'- 計算に必要な情報が複数ある場合でも、まずは最も主要な数値を算出し、不足している情報については補足としてユーザーに具体的に問いかけること。例：「この計算には踏面の出寸法が必要です。何mmに設定しますか？」',
+'- 「情報が不足しているため答えられません」と絶対に言わない。',
+'',
+'【記憶・文脈理解のルール】',
+'- 会話の流れで出てきたすべての寸法・仕様（モジュール・柱寸・ボード厚・工法など）は必ず記憶し、以降のすべての計算に自動的に適用する。',
+'- ユーザーが「柱105mm」と言ったら以降ずっと柱=105mmで計算する。',
+'- ユーザーが「900モジュール」と言ったら以降ずっとモジュール=900mmで計算する。',
+'- ユーザーが数値だけ（例：「832.5」「105」）を送ってきたら、直前の会話や文脈からそれが何の寸法か判断し、適切な回答または計算を試みる。',
+'',
+'【差引計算のルール】',
+'- モジュール芯々から有効寸法を出す場合：芯々 − 柱半分 − ボード厚（張り枚数・片側/両側を考慮）= 有効寸法',
+'- 「外周先張り」= 外側の柱面にボードが先に張られている = 柱の外面+ボード厚まで差引く',
+'- 「内周先張り」= 内側の柱面にボードが先に張られている = 柱の内面+ボード厚を差引く',
+'- 「片面」= ボードが片側のみ。「両面」= ボードが両側。',
+'- 例1：900モジュール・柱105mm・ボード15mm外周先張り（片側）→ 900 − 52.5 − 15 = 832.5mm',
+'- 例2：900モジュール・柱105mm・ボード12.5mm両面 → 900 − 105 − 12.5 − 12.5 = 760mm',
+'',
+'【廻り階段・段板の計算ルール】',
+'- 3段廻りの段板基準寸法 = 柱芯まで = モジュール − 柱半分 − ボード厚（外周先張り分）',
+'- 例：900モジュール・柱105mm・ボード15mm外周先張り → 832.5mm',
+'- 段板の出（ケラバ）は別途加算（通常20〜30mm。指定があればそれを優先）',
+'- 蹴込みしゃくり・ほぞ・のみ代は別途指示があれば差引く',
+'- 歩行線（内側から300mm）での踏面：建基令23条 住宅195mm以上',
+'- 「伸び」「斜辺」「勾配」などの言葉が出たら直角三角形の斜辺を求める計算と判断して算出する',
+'',
+'【回答フォーマット】',
+'計算系：① 答え（数値）を最初の行に ② 計算式を1行 ③ 補足2〜3行以内',
+'手順系：箇条書き・各項目1〜2行・長々と説明しない',
+'法令系：条文番号と数値のみ',
+'',
+'【絶対にやってはいけないこと】',
+'- 「情報が不足しているため答えられません」→ 不足分は具体的な質問として提示せよ',
+'- 同じことを繰り返す・前置きを長くする',
+'- ユーザーが既に知っている基本説明を一から始める',
+'- 「柱105mm」と来たら「105mmとは〜」と説明し直す → 不要。計算に使え',
+'- 余計な絵文字や装飾的な表現を使わない。プロフェッショナルで実用的な情報提供に徹する',
+'',
+'【計算結果のJSON出力】',
+'数値が出たら必ずこの形式を含める: RESULT_JSON:{"value":"数値のみ","expression":"計算式"}',
+].join('\n');
+
+// ================================================
+//  STATE
+// ================================================
+var state = {
+  mode: 'normal',
+  history: [],
+  attachData: null,
+  attachType: null,
+  attachName: '',
+  busy: false,
+  uid: null,
+  keyLogin: false,
+  currentChatId: null,
+  // ===== 現場メモリ =====
+  site: {
+    module: null,      // モジュール(mm)
+    hashira: null,     // 柱寸(mm)
+    board: null,       // ボード厚(mm)
+    boardSide: null,   // 'outer'|'inner'|'both'|'one'
+    boardNote: '',     // 「外周先張り」など生テキスト
+    kobai: null,       // 勾配(寸)
+    階高: null,
+    memo: ''
+  }
+};
+
+// ================================================
+//  FIREBASE CALLGEMINI
+// ================================================
+async function callGemini(prompt, useSearch, useUrl, mediaContents){
+  var body = { prompt, model:'gemini-2.5-flash' };
+  if(useSearch) body.useSearch = true;
+  if(useUrl) body.targetUrl = useUrl;
+  if(mediaContents && mediaContents.length) body.mediaContents = mediaContents;
+  var r = await fetch(FUNCTIONS_BASE + '/askAI', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Access-Key':ACCESS_KEY},
+    body:JSON.stringify(body)
+  });
+  var json = await r.json().catch(function(){return{};});
+  if(!r.ok){ throw new Error('通信エラー '+(json?.error||r.status)); }
+  var d=json;
+  return d?.data?.text || d?.candidates?.[0]?.content?.parts?.[0]?.text || d?.text || d?.result || '応答なし';
+}
+
+// ================================================
+//  AUTH
+// ================================================
+function initAuth(){
+  if(!window.__fb){ window.addEventListener('fbReady',initAuth,{once:true}); return; }
+  fb().onAuthStateChanged(fb().auth, user=>{
+    if(user){ state.uid=user.uid; showApp(user.email); }
+    else { showLogin(); }
+  });
+}
+document.addEventListener('DOMContentLoaded', initAuth);
+
+var loginMode = 'email';
+function switchTab(t){
+  loginMode=t;
+  document.getElementById('tab-email').classList.toggle('active',t==='email');
+  document.getElementById('tab-key').classList.toggle('active',t==='key');
+  document.getElementById('login-email-form').style.display = t==='email'?'block':'none';
+  document.getElementById('login-key-form').style.display = t==='key'?'block':'none';
+}
+
+function toggleKeyEye(){
+  var inp=document.getElementById('l-key');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+function handleLogin(){
+  if(loginMode==='email') doLogin(); else doKeyLogin();
+}
+
+async function doLogin(){
+  var email=document.getElementById('l-email').value.trim();
+  var pass=document.getElementById('l-pass').value;
+  var err=document.getElementById('l-err');
+  err.textContent='';
+  if(!email||!pass){err.textContent='メールとパスワードを入力してください';return;}
+  var btn=document.getElementById('l-btn');
+  btn.textContent='認証中...'; btn.disabled=true;
+  try{
+    await fb().signInWithEmailAndPassword(fb().auth,email,pass);
+  }catch(e){
+    var m={'auth/invalid-credential':'メールまたはパスワードが間違っています','auth/too-many-requests':'しばらく待ってから再試行してください'};
+    err.textContent=m[e.code]||'ログインに失敗しました';
+  }
+  btn.textContent='⚡ 入室する'; btn.disabled=false;
+}
+
+function doKeyLogin(){
+  var key=document.getElementById('l-key').value.trim();
+  var err=document.getElementById('l-err');
+  if(key===ACCESS_KEY){
+    state.keyLogin=true;
+    state.uid='key-user-'+Date.now();
+    showApp('キーユーザー');
+  } else {
+    err.textContent='アクセスキーが正しくありません';
+  }
+}
+
+async function doLogout(){
+  if(!confirm('ログアウトしますか？'))return;
+  if(!state.keyLogin){ await fb().signOut(fb().auth); }
+  state.keyLogin=false; state.uid=null;
+  showLogin();
+}
+
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').classList.remove('show');
+}
+
+function showApp(email){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('user-badge').textContent = email||'';
+  // ログイン完了後にメモリーボックスを読み込む
+  setTimeout(function(){ loadCalcLogic(); }, 800);
+}
+
+// ================================================
+//  MODE
+// ================================================
+function setMode(m){
+  state.mode=m;
+  ['normal','search','url'].forEach(function(k){
+    var btn=document.getElementById('m-'+k);
+    if(!btn)return;
+    btn.classList.toggle('active',k===m);
+    btn.classList.remove('green','blue');
+    if(k==='search'&&m==='search') btn.classList.add('green');
+    if(k==='url'&&m==='url') btn.classList.add('blue');
+  });
+  var urlBar=document.getElementById('url-bar');
+  urlBar.classList.toggle('show',m==='url');
+  var ta=document.getElementById('main-ta');
+  var ind=document.getElementById('mode-indicator');
+  if(m==='search'){ta.placeholder='🔍 検索して調べたいことを...';ind.textContent='🔍 検索';ind.style.color='var(--green)';}
+  else if(m==='url'){ta.placeholder='🔗 URLのページについて質問...';ind.textContent='🔗 URL解析';ind.style.color='var(--blue)';}
+  else{ta.placeholder='何でも質問してください...';ind.textContent='💬 通常';ind.style.color='var(--accent)';}
+}
+
+function clearUrl(){
+  document.getElementById('url-inp').value='';
+  setMode('normal');
+}
+
+// ================================================
+//  VOICE INPUT
+// ================================================
+var voiceRec=null, voiceOn=false;
+function toggleVoice(){
+  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
+    alert('このブラウザは音声入力未対応です。Chromeをお試しください。'); return;
+  }
+  var btn=document.getElementById('mic-btn');
+  var vstat=document.getElementById('voice-status');
+  if(voiceOn){
+    voiceRec&&voiceRec.stop(); voiceOn=false;
+    btn.classList.remove('rec'); vstat.style.display='none'; return;
+  }
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  voiceRec=new SR(); voiceRec.lang='ja-JP'; voiceRec.continuous=false; voiceRec.interimResults=true;
+  var ta=document.getElementById('main-ta');
+  voiceOn=true; btn.classList.add('rec'); vstat.style.display='block';
+  voiceRec.onresult=function(e){
+    var t=''; for(var i=e.resultIndex;i<e.results.length;i++) t+=e.results[i][0].transcript;
+    ta.value=t; resizeTa(ta);
+  };
+  voiceRec.onend=function(){ voiceOn=false; btn.classList.remove('rec'); vstat.style.display='none'; };
+  voiceRec.onerror=function(e){ voiceOn=false; btn.classList.remove('rec'); vstat.style.display='none'; if(e.error!=='no-speech') alert('音声エラー: '+e.error); };
+  voiceRec.start();
+}
+
+// ================================================
+//  CAMERA / IMAGE / PDF
+// ================================================
+function triggerCamera(){ document.getElementById('cam-input').click(); }
+function triggerImage(){ document.getElementById('img-input').click(); }
+function triggerPDF(){ document.getElementById('pdf-input').click(); }
+
+function onFileSelected(e, type){
+  var file=e.target.files[0]; if(!file)return;
+  state.attachName=file.name;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    state.attachData=ev.target.result;
+    state.attachType=type;
+    var thumb=document.getElementById('img-thumb');
+    var lbl=document.getElementById('img-lbl');
+    var bar=document.getElementById('img-bar');
+    if(type==='image'){
+      thumb.src=state.attachData; thumb.style.display='block';
+      lbl.textContent='📷 '+file.name;
+    } else {
+      thumb.style.display='none';
+      lbl.textContent='📄 '+file.name+' (PDF)';
+    }
+    bar.classList.add('show');
+    appendSys('📎 '+file.name+' を添付しました');
+  };
+  if(type==='pdf') reader.readAsDataURL(file);
+  else reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+function clearAttach(){
+  state.attachData=null; state.attachType=null; state.attachName='';
+  document.getElementById('img-bar').classList.remove('show');
+  document.getElementById('img-thumb').src='';
+}
+
+// ================================================
+//  SEND
+// ================================================
+function quickSend(btn){ document.getElementById('main-ta').value=btn.textContent; doSend(); }
+
+function resizeTa(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+function onTaKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();} }
+
+async function doSend(txt){
+  if(state.busy) return;
+  var ta=document.getElementById('main-ta');
+  var text=(txt||ta.value).trim();
+  if(!text) return;
+  ta.value=''; ta.style.height='';
+
+  // ユーザーバブル
+  var displayText=text;
+  if(state.mode==='search') displayText='🔍 '+text;
+  else if(state.mode==='url'){
+    var urlVal=document.getElementById('url-inp').value.trim();
+    if(urlVal) displayText='🔗 '+urlVal+'\n\n'+text;
+  }
+  appendMsg('user', displayText, state.attachData&&state.attachType==='image'?state.attachData:null);
+
+  // 会話履歴
+  state.history.push({role:'user',content:text});
+
+  // 添付処理
+  var mc=null;
+  if(state.attachData){
+    if(state.attachType==='image'){
+      mc=[{base64:state.attachData, type:'image/jpeg'}];
+    } else if(state.attachType==='pdf'){
+      // base64のみ送る
+      mc=[{base64:state.attachData, type:'application/pdf'}];
+    }
+    clearAttach();
+  }
+
+  state.busy=true;
+  document.getElementById('send-btn').disabled=true;
+  var typEl=appendTyping();
+
+  try{
+    // ===== 現場メモリ：テキストから数値を自動抽出して記憶 =====
+    extractSiteMemory(text);
+
+    // ===== 現場メモリをプロンプトに注入 =====
+    var siteCtx = buildSiteContext();
+
+    // ===== 会話履歴（直近10ターン・全文保持） =====
+    var histCtx='';
+    if(state.history.length>1){
+      var recent=state.history.slice(-10);
+      histCtx='\n\n【この会話で出てきた情報・やり取り】\n'
+        +recent.map(function(m){
+          return (m.role==='user'?'職人: ':'AI: ')+m.content;
+        }).join('\n');
+    }
+
+    var prompt = AI_SYS + buildLogicContext() + siteCtx + histCtx + '\n\n職人の質問: ' + text;
+    var useSearch=(state.mode==='search');
+    var useUrl=(state.mode==='url')?document.getElementById('url-inp').value.trim():'';
+
+    var resp=await callGemini(prompt, useSearch, useUrl, mc);
+    typEl.remove();
+    state.history.push({role:'assistant',content:resp});
+
+    // RESULT_JSON抽出
+    var result=null;
+    var m=resp.match(/RESULT_JSON:(\{[^}]+\})/);
+    if(m){try{result=JSON.parse(m[1]);}catch(ex){}}
+    var clean=resp.replace(/RESULT_JSON:\{[^}]+\}/g,'').trim();
+
+    if(result&&result.value){
+      appendCalcMsg(clean, result);
+    } else {
+      appendMsg('bot', clean);
+    }
+  }catch(err){
+    typEl.remove();
+    appendMsg('bot','⚠️ エラー: '+err.message);
+  }
+  state.busy=false;
+  document.getElementById('send-btn').disabled=false;
+  updateSiteBadge();
+  ta.focus();
+}
+
+// ================================================
+//  DOM HELPERS
+// ================================================
+function appendMsg(role, text, imgSrc){
+  var msgs=document.getElementById('msgs');
+  var div=document.createElement('div'); div.className='msg '+role;
+  var av=document.createElement('div'); av.className='avatar';
+  av.textContent=role==='bot'?'⚡':'👤';
+  var bub=document.createElement('div'); bub.className='bubble';
+  bub.textContent=text;
+  if(imgSrc){
+    var img=document.createElement('img'); img.src=imgSrc; img.className='att';
+    bub.appendChild(img);
+  }
+  div.appendChild(av); div.appendChild(bub);
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+function appendCalcMsg(text, result){
+  var msgs=document.getElementById('msgs');
+  var div=document.createElement('div'); div.className='msg bot';
+  var av=document.createElement('div'); av.className='avatar'; av.textContent='⚡';
+  var bub=document.createElement('div'); bub.className='bubble';
+  var p=document.createElement('span'); p.style.whiteSpace='pre-wrap'; p.textContent=text;
+  bub.appendChild(p);
+  var chip=document.createElement('div'); chip.className='calc-chip';
+  chip.innerHTML='<span style="font-size:20px;">📊</span><div><div class="chip-val">'+result.value+'</div><div class="chip-lbl">タップしてコピー</div></div>';
+  chip.onclick=function(){
+    try{navigator.clipboard.writeText(result.value);}catch(e){}
+    chip.querySelector('.chip-lbl').textContent='✅ コピーしました';
+    setTimeout(function(){chip.querySelector('.chip-lbl').textContent='タップしてコピー';},1800);
+  };
+  bub.appendChild(chip);
+  div.appendChild(av); div.appendChild(bub);
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function appendTyping(){
+  var msgs=document.getElementById('msgs');
+  var div=document.createElement('div'); div.className='msg bot';
+  var av=document.createElement('div'); av.className='avatar'; av.textContent='⚡';
+  var bub=document.createElement('div'); bub.className='bubble';
+  bub.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
+  div.appendChild(av); div.appendChild(bub);
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+function appendSys(text){
+  var msgs=document.getElementById('msgs');
+  var div=document.createElement('div'); div.className='sys-notice';
+  div.textContent=text;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ================================================
+//  現場メモリ：テキストから自動抽出
+// ================================================
+function extractSiteMemory(text){
+  var s = state.site;
+
+  // モジュール
+  var mMod = text.match(/(\d{3,4})\s*モジュール/);
+  if(mMod) s.module = parseInt(mMod[1]);
+
+  // 柱寸
+  var mHas = text.match(/柱\s*(\d{2,3})\s*(?:mm|ミリ)?/);
+  if(mHas) s.hashira = parseInt(mHas[1]);
+  // 「105mm」単体でも記憶（前の会話で「柱」と言ってたら）
+  var mMm = text.match(/^(\d{2,3})(?:mm)?$/);
+  if(mMm && state.history.some(function(h){ return /柱/.test(h.content); })){
+    s.hashira = parseInt(mMm[1]);
+  }
+
+  // ボード厚
+  var mBoard = text.match(/ボード\s*(\d+(?:\.\d+)?)\s*(?:mm|ミリ)?/);
+  if(mBoard) s.board = parseFloat(mBoard[1]);
+  // 「15mm」単体（前後の文脈でボードと分かる場合）
+  var mBthick = text.match(/(\d+(?:\.\d+)?)\s*mm\s*(?:ボード|厚)/);
+  if(mBthick) s.board = parseFloat(mBthick[1]);
+
+  // 外周先張り・内周・両面
+  if(/外周先張り|外周/.test(text)) { s.boardSide='outer'; s.boardNote='外周先張り'; }
+  if(/内周先張り|内周/.test(text)) { s.boardSide='inner'; s.boardNote='内周先張り'; }
+  if(/両面|両側/.test(text))       { s.boardSide='both';  s.boardNote='両面張り'; }
+  if(/片面|片側/.test(text))       { s.boardSide='one';   s.boardNote='片面張り'; }
+
+  // 勾配
+  var mKob = text.match(/(\d+(?:\.\d+)?)\s*寸\s*勾配|勾配\s*(\d+(?:\.\d+)?)\s*寸/);
+  if(mKob) s.kobai = parseFloat(mKob[1]||mKob[2]);
+
+  // 差引有効寸法を計算してメモ
+  if(s.module && s.hashira){
+    var board = s.board || 0;
+    var sides = s.boardSide==='both' ? 2 : (s.boardSide ? 1 : 0);
+    var yuko = s.module - (s.hashira/2) - (board * sides);
+    s.memo = '現在の有効寸法: '+s.module+'−'+s.hashira+'/2'+(board?'−'+board+'×'+sides:'')+'='+Math.round(yuko*10)/10+'mm';
+  }
+}
+
+function buildSiteContext(){
+  var s = state.site;
+  var lines = [];
+  if(s.module)   lines.push('モジュール: '+s.module+'mm');
+  if(s.hashira)  lines.push('柱: '+s.hashira+'mm');
+  if(s.board)    lines.push('ボード厚: '+s.board+'mm（'+( s.boardNote||'張り方不明')+'）');
+  if(s.kobai)    lines.push('勾配: '+s.kobai+'寸');
+  if(s.memo)     lines.push(s.memo);
+  if(!lines.length) return '';
+  return '\n\n【この現場の確定仕様（これをベースに計算せよ）】\n'+lines.join('\n');
+}
+
+// ================================================
+//  NEW CHAT
+// ================================================
+function newChat(){
+  state.history=[]; state.currentChatId=null;
+  state.site={module:null,hashira:null,board:null,boardSide:null,boardNote:'',kobai:null,階高:null,memo:''};
+  var msgs=document.getElementById('msgs');
+  msgs.innerHTML='';
+  appendSys('── 新しい会話を開始しました ──');
+  appendMsg('bot','何でも聞いてください！\n検索・URL解析・画像・PDF・音声・図面 — 全機能使えます ⚡');
+  clearAttach();
+  setMode('normal');
+  updateSiteBadge();
+}
+
+function updateSiteBadge(){
+  var s=state.site;
+  var parts=[];
+  if(s.module) parts.push(s.module+'mod');
+  if(s.hashira) parts.push('柱'+s.hashira);
+  if(s.board) parts.push('BD'+s.board+(s.boardNote?'('+s.boardNote+')':''));
+  if(s.kobai) parts.push(s.kobai+'寸');
+  var badge=document.getElementById('site-badge');
+  if(badge){
+    badge.textContent=parts.length?'📐 '+parts.join(' · '):'';
+    badge.style.display=parts.length?'block':'none';
+  }
+}
+
+// ================================================
+//  SKETCH
+// ================================================
+var skTool='pen', skColor='#1a1a1a', skSize=4, skHist=[], skDrawing=false, skStart={}, skCtx=null;
+
+function openSketch(){
+  document.getElementById('sketch-modal').classList.add('show');
+  if(!skCtx){
+    var canvas=document.getElementById('sketch-canvas');
+    var w=Math.min(window.innerWidth-28,380);
+    canvas.width=w; canvas.height=Math.round(w*0.68);
+    skCtx=canvas.getContext('2d');
+    skCtx.fillStyle='#ffffff'; skCtx.fillRect(0,0,canvas.width,canvas.height);
+    bindSketchEvents(canvas);
+  }
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function setSkTool(t){
+  skTool=t;
+  ['pen','line','rect','text','erase'].forEach(function(id){
+    var b=document.getElementById('sk-'+id);
+    if(b) b.classList.toggle('on',id===t);
+  });
+}
+
+function bindSketchEvents(canvas){
+  function pos(e){ var r=canvas.getBoundingClientRect(),s=e.touches?e.touches[0]:e; return {x:s.clientX-r.left,y:s.clientY-r.top}; }
+  canvas.addEventListener('mousedown',down); canvas.addEventListener('touchstart',down,{passive:false});
+  canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move,{passive:false});
+  canvas.addEventListener('mouseup',up); canvas.addEventListener('touchend',up);
+  function down(e){ e.preventDefault(); skDrawing=true; var p=pos(e); skStart=p;
+    if(skTool==='text'){
+      var t=prompt('テキストを入力',''); if(!t){skDrawing=false;return;}
+      skHist.push(skCtx.getImageData(0,0,canvas.width,canvas.height));
+      skCtx.fillStyle=skColor; skCtx.font='bold '+(skSize*4+8)+'px sans-serif'; skCtx.fillText(t,p.x,p.y);
+      skDrawing=false; return;
+    }
+    if(skTool==='pen'||skTool==='erase'){
+      skHist.push(skCtx.getImageData(0,0,canvas.width,canvas.height));
+      skCtx.beginPath(); skCtx.moveTo(p.x,p.y);
+    }
+  }
+  function move(e){ e.preventDefault(); if(!skDrawing)return; var p=pos(e);
+    if(skTool==='pen'){ skCtx.lineTo(p.x,p.y); skCtx.strokeStyle=skColor; skCtx.lineWidth=skSize; skCtx.lineCap='round'; skCtx.lineJoin='round'; skCtx.stroke(); }
+    else if(skTool==='erase'){ skCtx.lineTo(p.x,p.y); skCtx.strokeStyle='#ffffff'; skCtx.lineWidth=skSize*5; skCtx.lineCap='round'; skCtx.stroke(); }
+    else if(skTool==='line'||skTool==='rect'){
+      if(skHist.length) skCtx.putImageData(skHist[skHist.length-1],0,0);
+      skCtx.beginPath(); skCtx.strokeStyle=skColor; skCtx.lineWidth=skSize; skCtx.lineCap='round';
+      if(skTool==='line'){skCtx.moveTo(skStart.x,skStart.y);skCtx.lineTo(p.x,p.y);}
+      else{skCtx.strokeRect(skStart.x,skStart.y,p.x-skStart.x,p.y-skStart.y);}
+      skCtx.stroke();
+    }
+  }
+  function up(){ if(!skDrawing)return; skDrawing=false;
+    if(skTool==='line'||skTool==='rect') skHist.push(skCtx.getImageData(0,0,canvas.width,canvas.height));
+  }
+}
+
+function skUndo(){ if(!skCtx||!skHist.length)return; var c=document.getElementById('sketch-canvas'); skCtx.putImageData(skHist.pop(),0,0); }
+function skClear(){ if(!skCtx)return; var c=document.getElementById('sketch-canvas'); skHist.push(skCtx.getImageData(0,0,c.width,c.height)); skCtx.fillStyle='#fff'; skCtx.fillRect(0,0,c.width,c.height); }
+function saveSketch(){ var c=document.getElementById('sketch-canvas'); var a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='sketch_'+Date.now()+'.png'; a.click(); }
+
+async function sendSketch(){
+  var canvas=document.getElementById('sketch-canvas');
+  var dataUrl=canvas.toDataURL('image/jpeg',0.85);
+  var q=prompt('この図面について質問:','この図面を解説してください');
+  if(!q)return;
+  closeModal('sketch-modal');
+  // 画像を添付してsend
+  state.attachData=dataUrl; state.attachType='image'; state.attachName='sketch.jpg';
+  var thumb=document.getElementById('img-thumb'); thumb.src=dataUrl; thumb.style.display='block';
+  document.getElementById('img-lbl').textContent='📐 スケッチ図面';
+  document.getElementById('img-bar').classList.add('show');
+  document.getElementById('main-ta').value=q;
+  resizeTa(document.getElementById('main-ta'));
+  doSend(q);
+}
+
+// ================================================
+//  HISTORY (Firestore)
+// ================================================
+async function openHistory(){
+  document.getElementById('history-modal').classList.add('show');
+  var list=document.getElementById('history-list');
+  list.innerHTML='<div class="sys-notice">読み込み中...</div>';
+  if(!state.uid||state.keyLogin){ list.innerHTML='<div class="sys-notice">ログインユーザーのみ履歴を保存できます</div>'; return; }
+  try{
+    var {db,collection,getDocs,query,orderBy,limit}=fb();
+    var snap=await getDocs(query(collection(db,'users/'+state.uid+'/chats'),orderBy('createdAt','desc'),limit(20)));
+    if(snap.empty){list.innerHTML='<div class="sys-notice">履歴はありません</div>';return;}
+    var html='';
+    snap.forEach(function(d){
+      var dt=d.data(); var ts=dt.createdAt?.toDate?dt.createdAt.toDate():new Date();
+      var dateStr=ts.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      html+='<div class="hist-item" onclick="loadHistory(\''+d.id+'\')">'
+        +'<button class="hist-del" onclick="event.stopPropagation();deleteHistory(\''+d.id+'\',this)">削除</button>'
+        +'<div class="hist-title">'+(dt.title||'無題の会話')+'</div>'
+        +'<div class="hist-meta">'+dateStr+' · '+( dt.msgCount||0)+'メッセージ</div></div>';
+    });
+    list.innerHTML=html;
+  }catch(e){
+    list.innerHTML='<div class="sys-notice">読み込みエラー: '+e.message+'</div>';
+  }
+}
+
+async function loadHistory(chatId){
+  try{
+    var {db,doc,getDoc}=fb();
+    var snap=await getDoc(doc(db,'users/'+state.uid+'/chats/'+chatId));
+    if(!snap.exists())return;
+    var data=snap.data();
+    state.history=data.messages||[];
+    state.currentChatId=chatId;
+    var msgs=document.getElementById('msgs');
+    msgs.innerHTML='';
+    appendSys('── 履歴を読み込みました: '+(data.title||'無題')+'──');
+    state.history.forEach(function(m){
+      appendMsg(m.role==='user'?'user':'bot', m.content);
+    });
+    closeModal('history-modal');
+  }catch(e){ alert('読み込みエラー: '+e.message); }
+}
+
+async function deleteHistory(chatId, btn){
+  if(!confirm('この履歴を削除しますか？'))return;
+  btn.textContent='削除中...'; btn.disabled=true;
+  try{
+    var {db,doc,deleteDoc}=fb();
+    await deleteDoc(doc(db,'users/'+state.uid+'/chats/'+chatId));
+    btn.closest('.hist-item').remove();
+  }catch(e){ alert('削除エラー: '+e.message); btn.textContent='削除'; btn.disabled=false; }
+}
+
+// ================================================
+//  SAVE
+// ================================================
+function openSave(){ document.getElementById('save-modal').classList.add('show'); }
+
+function getChatText(){
+  var lines=[];
+  document.querySelectorAll('#msgs .msg').forEach(function(el){
+    var bub=el.querySelector('.bubble');
+    if(!bub)return;
+    var role=el.classList.contains('user')?'【あなた】':'【DAIKU-GPT】';
+    lines.push(role+'\n'+bub.textContent+'\n');
+  });
+  return lines.join('\n---\n\n');
+}
+
+function saveAsText(){
+  var txt='DAIKU-GPT 会話記録\n'+new Date().toLocaleString('ja-JP')+'\n\n'+getChatText();
+  var a=document.createElement('a'); a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+  a.download='daikugpt_'+Date.now()+'.txt'; a.click();
+  closeModal('save-modal');
+}
+
+function saveAsHTML(){
+  var msgs=document.getElementById('msgs').outerHTML;
+  var html='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>DAIKU-GPT 保存</title>'
+    +'<style>body{font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:16px;}'
+    +'.msg{display:flex;gap:8px;margin-bottom:12px;}.bubble{max-width:85%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;font-size:14px;line-height:1.7;}'
+    +'.bot .bubble{background:#161b22;border:1px solid #30363d;}.user{flex-direction:row-reverse;}.user .bubble{background:#f0a030;color:#0d1117;}'
+    +'</style></head><body>'+msgs+'</body></html>';
+  var a=document.createElement('a'); a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download='daikugpt_'+Date.now()+'.html'; a.click();
+  closeModal('save-modal');
+}
+
+function copyAll(){
+  navigator.clipboard.writeText(getChatText()).then(function(){
+    alert('クリップボードにコピーしました');
+    closeModal('save-modal');
+  }).catch(function(){ alert('コピーに失敗しました'); });
+}
+
+async function cloudSave(){
+  if(!state.uid||state.keyLogin){ alert('クラウド保存はFirebaseログインが必要です'); return; }
+  if(!state.history.length){ alert('会話がありません'); return; }
+  try{
+    var {db,collection,doc,setDoc,addDoc,serverTimestamp}=fb();
+    var title=(state.history[0]?.content||'無題').slice(0,30);
+    var chatData={
+      title:title, messages:state.history,
+      msgCount:state.history.length, createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+    };
+    if(state.currentChatId){
+      await setDoc(doc(db,'users/'+state.uid+'/chats/'+state.currentChatId),chatData);
+    } else {
+      var ref=await addDoc(collection(db,'users/'+state.uid+'/chats'),chatData);
+      state.currentChatId=ref.id;
+    }
+    alert('☁️ クラウドに保存しました');
+    closeModal('save-modal');
+  }catch(e){ alert('保存エラー: '+e.message); }
+}
+</script>
+</body>
+</html>
